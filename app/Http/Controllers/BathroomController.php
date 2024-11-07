@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bathroom; // Certifique-se de que o modelo Bathroom está criado
+use App\Models\Bathroom;
 use Illuminate\Http\Request;
+use App\Exceptions\BathroomNotFoundException;
 
 class BathroomController extends Controller
 {
@@ -20,7 +21,7 @@ class BathroomController extends Controller
         $bathroom = Bathroom::find($id);
         
         if (!$bathroom) {
-            return response()->json(['message' => 'Banheiro não encontrado'], 404);
+            throw new BathroomNotFoundException();
         }
 
         return response()->json($bathroom);
@@ -44,7 +45,7 @@ class BathroomController extends Controller
         $bathroom = Bathroom::find($id);
         
         if (!$bathroom) {
-            return response()->json(['message' => 'Banheiro não encontrado'], 404);
+            throw new BathroomNotFoundException();
         }
 
         $bathroom->update($request->all());
@@ -57,10 +58,10 @@ class BathroomController extends Controller
         $bathroom = Bathroom::find($id);
         
         if (!$bathroom) {
-            return response()->json(['message' => 'Banheiro não encontrado'], 404);
+            throw new BathroomNotFoundException();
         }
 
         $bathroom->delete();
-        return response()->json(['message' => 'Banheiro deletado com sucesso']);
+        return response()->json(['message' => 'Banheiro deletado com sucesso'], 200);
     }
 }

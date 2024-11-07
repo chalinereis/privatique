@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Exceptions\UserNotFoundException;
 use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
@@ -12,7 +13,7 @@ class UserController extends Controller
     // Listar todos os usuários
     public function index()
     {
-        return User::all();
+        return response()->json(User::all(), 200);
     }
 
     // Criar um novo usuário
@@ -32,19 +33,35 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        return response()->json($user, 201);
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Usuário criado com sucesso.',
+            'user' => $user,
+            'token' => $token,
+        ], 201);
     }
 
     // Exibir um usuário específico
     public function show($id)
     {
-        return User::findOrFail($id);
+        $user = User::find($id);
+
+        if (!$user) {
+            throw new UserNotFoundException();
+        }
+
+        return response()->json($user, 200);
     }
 
     // Atualizar um usuário existente
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::find($id);
+
+        if (!$user) {
+            throw new UserNotFoundException();
+        }
 
         // Validar os dados de entrada
         $request->validate([
@@ -54,17 +71,34 @@ class UserController extends Controller
         ]);
 
         // Atualizar o usuário
-        $user->update($request->only('nickname', 'email', 'password'));
+        $data = $request->only('nickname', 'email');
 
-        return response()->json($user, 200);
+        // Atualizar a senha se fornecida
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $user->update($data);
+
+        return response()->json([
+            'message' => 'Usuário atualizado com sucesso.',
+            'user' => $user,
+        ], 200);
     }
 
     // Deletar um usuário
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::find($id);
+
+        if (!$user) {
+            throw new UserNotFoundException();
+        }
+
         $user->delete();
 
-        return response()->json(null, 204);
+        return response()->json([
+            'message' => 'Usuário deletado com sucesso.'
+        ], 204);
     }
 }
